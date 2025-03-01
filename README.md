@@ -1,36 +1,44 @@
-# turboprobe
-Throwing caution to the wind and attempting to loosely deduce if a webserver is running on port 443 as fast as I can at the expense of accuracy.
+# TurboProbe: Fast Webserver Detection on Port 443
 
-##Why? What a massive waste of time...
-Yes and no....I have a list of 15 million subdomains I want to probe for webservers. I would like to be very accurate in this but I have the attention span of a toddler and running a scan for several days, even weeks is... eugh....I would just cancel it. So I wondered at what point in a TCP connection could we deduce the prescence of a webserver. Turns out that it looks like you 'need' to get all the way to the HTTP response if you want to do so with accuracy. But what if I don't really care about accuracy so long as it isn't a complete loss? Working on the assumption that if a subdomain responds on port 443, there is a reasonable probability that there is a webserver running on that port, the earliest possible point to look at is when the SYN-ACK portion of the handshake happens. So thats what I tried to do. 
+Throwing caution to the wind and attempting to loosely deduce if a webserver is running on port 443 as fast as I can, at the expense of accuracy.
 
-This tool deduces the prescence of a webserver on port 443 from the reciept of a SYN-ACK only. This is really silly and probably unsafe because any service could be running on that port. The purpose here is speed at the expense of accuracy. By droping connections attempts that do not return a SYN-ACK quickly, and quickly dropping the connection and moving onto the next job if a SYN-ACK is recieved too, I avoid all of the overhead that comes with completing a httprequest following a handshake to confirm the prescence of a webserver. A bottle neck that I wasn't able to mitigate, is the need for a timeout on each request. Initial response just takes as long as it does and there isn't much I could do about that. 
+## Why?
 
-Here is how the tool performed:
-(tests performed on the second from lowest tier ubuntu VPS on Digital Ocean with concurrency set to 200 and timeout set to 500 milliseconds)
-Over a list of 3394 subdomains, the tool reported that 874 of them responded on port 443 in 4 seconds (loosely implying the prescence of a webserver).
-In comparison, a popular, much slower but much more accurate tool, reported 1013 webservers on port 443 in 8m41s.
+What a massive waste of time... Yes and no. I have a list of 15 million subdomains I want to probe for webservers. I'd love to be super accurate, but I have the attention span of a toddler, and running a scan for days—or even weeks—is just... eugh. I'd cancel it. So, I wondered: at what point in a TCP connection can we deduce a webserver's presence? Turns out, for real accuracy, you need to wait for the HTTP response. But what if I don’t care that much about accuracy, as long as it’s not totally useless?
 
-This is roughly 86% of the findings but in about 0.8% of the time. WINNING.
-One of the key losses in accuracy was down to my tests using 500 milliseconds as a timout for each operation. Again, sacrificing accuracy for speed.
+I assumed that if a subdomain responds on port 443, there’s a decent chance a webserver’s running there. The earliest point to check is the SYN-ACK part of the handshake. So, that’s what I went with.
 
-Some comments/observations:
-Wnen testing other popular tools against turboprobe, I left them on their default settings. This was to make sure I wouldn't, push a tool known for accuracy to be less accurate. For example, commonly, similar probing tool will work with timouts of 10 or even 20 seconds to make sure we don't miss out where servers might be slower to respond.
+## How It Works
 
-System resource usage was interesting. Ram usage in turbo probecapped out at 1.17 GB during my tests and didnt fluctuate much. CPU usage fluctuated between 70% and 100%.
-The more conventional tools put a similar load on the processor but used more than twice the ram in some cases.
+TurboProbe deduces a webserver on port 443 based solely on receiving a SYN-ACK. It’s a silly, probably unsafe approach since any service could be on that port. The goal here is speed, not accuracy. By dropping connection attempts that don’t return a SYN-ACK fast enough—and quickly moving on even when one *is* received—I skip all the overhead of completing an HTTP request to confirm a webserver.
 
-So, how did the 15 million subdomain scan go? 
-It's still going. I started it an hour and a half ago. I estimate it will take between 5 and 8 hours. I'll update this page when it finishes.
-So far it is still very recource efficient though. Sitting at 1.18 GB of ram and 35% to 55% CPU usage. (The low CPU usage appears to happen when the tool is not timing out on a lot of requests, this makes sense because I know for a fact that my 15 million list likely has less than 50% running webservers)
+One bottleneck I couldn’t dodge: timeouts. The initial response takes however long it takes, and there’s not much I could do about it.
 
-##Why you should probably not use this tool:
-It requires root for the low level packet things. Running a tool from a stranger as root is generally not advised....
-It is innacurate. 80 something percentaccuracy is fine for my needs. If you care about accuracy and you have more patience than me, just use a much better tool. there are many of them. 
-Using it probably opens you up to being owned in some creative way that I'm not aware of. 
+## Performance
 
-##So why share?
-I'm bored and this test entertained me for a few hours so maybe reading it about it will be slighlty interesting to someone else. 
+Here’s how TurboProbe stacked up (tested on the second-lowest tier Ubuntu VPS on Digital Ocean, concurrency at 200, timeout at 500 milliseconds):
 
- 
- 
+- Over 3,394 subdomains, TurboProbe reported 874 responding on port 443 in **4 seconds** (hinting at webservers).
+- A popular, slower, but far more accurate tool found 1,013 webservers in **8 minutes and 41 seconds**.
+
+That’s about 86% of the accurate tool’s findings in roughly 0.8% of the time. Winning! The main accuracy hit came from the 500ms timeout per operation—speed over precision, as always.
+
+## Observations
+
+Some notes from testing:
+
+- I left other popular tools on their default settings to keep their accuracy intact. For instance, they often use 10- or 20-second timeouts to catch slower servers, while TurboProbe’s at 500ms.
+- Resource usage: TurboProbe’s RAM capped at 1.17 GB and stayed steady, with CPU bouncing between 70% and 100%. Conventional tools matched the CPU load but often used over twice the RAM.
+- The 15 million subdomain scan? Still running as I write this. Results will be added here when it’s done.
+
+## Disclaimer
+
+Why you *shouldn’t* use TurboProbe:
+
+- It needs **root privileges** for low-level packet stuff. Running some stranger’s tool as root? Sketchy move.
+- It’s **inaccurate**. Detecting ~86% of what a proper tool finds works for me, but if you want precision and have more patience, pick a better tool—there are plenty.
+- It might get you **owned** in some clever way I haven’t figured out yet.
+
+## So Why Share?
+
+I was bored, and messing with this kept me entertained for a few hours. Maybe someone else will find it mildly interesting too.
