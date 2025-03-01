@@ -29,7 +29,7 @@ Some notes from testing:
 
 - I left other popular tools on their default settings to keep their accuracy intact. For instance, they often use 10- or 20-second timeouts to catch slower servers, while TurboProbe’s at 500ms.
 - Resource usage: TurboProbe’s RAM capped at 1.17 GB and stayed steady, with CPU bouncing between 70% and 100%. Conventional tools matched the CPU load but often used over twice the RAM.
-- The 15 million subdomain scan? Still running as I write this. Results will be added here when it’s done.
+- The 15 million subdomain scan? The scan completed in 3hours and 49 minutes and found 872019 webservers.  
 
 ## Disclaimer
 
